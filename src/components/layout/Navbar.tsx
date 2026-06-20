@@ -12,31 +12,58 @@ export function Navbar() {
   const [registerOpen, setRegisterOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const navLinks = [
+    { label: 'Home', href: '/' },
+    { label: 'Categories', href: '/#categories' },
+    { label: 'How It Works', href: '/how-it-works' },
+    { label: 'About', href: '/about' },
+    { label: 'Contact', href: '/contact' },
+  ];
+
   return (
     <>
       <nav className="bg-white shadow-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link href="/" className="text-2xl font-bold text-blue-600">
+            <Link href="/" className="text-2xl font-bold text-blue-600 flex-shrink-0">
               WorkNow
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-6">
+            <div className="hidden md:flex items-center gap-8">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-gray-700 hover:text-blue-600 transition font-medium text-sm"
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <a
+                href="#"
+                className="text-gray-700 hover:text-blue-600 transition font-medium text-sm"
+              >
+                Become a Worker
+              </a>
+            </div>
+
+            {/* Auth Section */}
+            <div className="hidden md:flex items-center gap-4">
               {!isAuthenticated && !isLoading ? (
                 <>
                   <button
                     onClick={() => setLoginOpen(true)}
-                    className="text-gray-700 hover:text-gray-900 transition"
+                    className="text-gray-700 hover:text-gray-900 transition font-medium"
                   >
                     Login
                   </button>
                   <button
                     onClick={() => setRegisterOpen(true)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
                   >
-                    Register
+                    Sign Up
                   </button>
                 </>
               ) : isLoading ? (
@@ -60,7 +87,7 @@ export function Navbar() {
                   </div>
                   <button
                     onClick={signOut}
-                    className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition text-sm"
+                    className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition text-sm font-medium"
                   >
                     Logout
                   </button>
@@ -88,51 +115,69 @@ export function Navbar() {
 
           {/* Mobile Menu */}
           {menuOpen && (
-            <div className="md:hidden pb-4 space-y-2">
-              {!isAuthenticated && !isLoading ? (
-                <>
-                  <button
-                    onClick={() => {
-                      setLoginOpen(true);
-                      setMenuOpen(false);
-                    }}
-                    className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
-                  >
-                    Login
-                  </button>
-                  <button
-                    onClick={() => {
-                      setRegisterOpen(true);
-                      setMenuOpen(false);
-                    }}
-                    className="block w-full text-left px-4 py-2 bg-blue-600 text-white rounded"
-                  >
-                    Register
-                  </button>
-                </>
-              ) : isLoading ? (
-                <div className="px-4 py-2">
-                  <div className="h-10 w-10 bg-gray-200 rounded-full animate-pulse"></div>
-                </div>
-              ) : (
-                <>
+            <div className="md:hidden pb-4 space-y-2 border-t pt-4">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <a
+                href="#"
+                className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
+              >
+                Become a Worker
+              </a>
+              <div className="border-t pt-4 space-y-2">
+                {!isAuthenticated && !isLoading ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        setLoginOpen(true);
+                        setMenuOpen(false);
+                      }}
+                      className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
+                    >
+                      Login
+                    </button>
+                    <button
+                      onClick={() => {
+                        setRegisterOpen(true);
+                        setMenuOpen(false);
+                      }}
+                      className="block w-full text-left px-4 py-2 bg-blue-600 text-white rounded"
+                    >
+                      Sign Up
+                    </button>
+                  </>
+                ) : isLoading ? (
                   <div className="px-4 py-2">
-                    <p className="text-sm font-medium text-gray-900">
-                      {user?.fullName || 'User'}
-                    </p>
-                    <p className="text-xs text-gray-500">{user?.role || 'Member'}</p>
+                    <div className="h-10 w-10 bg-gray-200 rounded-full animate-pulse"></div>
                   </div>
-                  <button
-                    onClick={() => {
-                      signOut();
-                      setMenuOpen(false);
-                    }}
-                    className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-50"
-                  >
-                    Logout
-                  </button>
-                </>
-              )}
+                ) : (
+                  <>
+                    <div className="px-4 py-2">
+                      <p className="text-sm font-medium text-gray-900">
+                        {user?.fullName || 'User'}
+                      </p>
+                      <p className="text-xs text-gray-500">{user?.role || 'Member'}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        signOut();
+                        setMenuOpen(false);
+                      }}
+                      className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-50"
+                    >
+                      Logout
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </div>
