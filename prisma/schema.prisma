@@ -1,0 +1,248 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  name          String?
+  password      String
+  phone         String?
+  avatar        String?
+  bio           String?
+  role          UserRole   @default(CUSTOMER)
+  isVerified    Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  customerProfile    CustomerProfile?
+  workerProfile      WorkerProfile?
+  jobsCreated        Job[]              @relation("createdBy")
+  jobsAccepted       Job[]              @relation("acceptedBy")
+  reviews            Review[]
+  messagesFrom       Message[]          @relation("sentBy")
+  messagesTo         Message[]          @relation("sentTo")
+  notifications      Notification[]
+
+  @@index([email])
+  @@index([role])
+}
+
+enum UserRole {
+  CUSTOMER
+  WORKER
+  ADMIN
+}
+
+model CustomerProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  rating          Float    @default(0)
+  totalJobs       Int      @default(0)
+  totalSpent      Float    @default(0)
+  address         String?
+  city            String?
+  latitude        Float?
+  longitude       Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([city])
+}
+
+model WorkerProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  rating          Float    @default(0)
+  totalJobs       Int      @default(0)
+  totalEarnings   Float    @default(0)
+  verified        Boolean  @default(false)
+  skills          String[]
+  categories      String[]
+  hourlyRate      Float    @default(0)
+  bio             String?
+  city            String?
+  latitude        Float?
+  longitude       Float?
+  maxDistance     Float    @default(50)
+  isAvailable     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([city])
+  @@index([isAvailable])
+}
+
+model Job {
+  id              String       @id @default(cuid())
+  title           String
+  description     String
+  category        String
+  budget          Float
+  status          JobStatus    @default(OPEN)
+  latitude        Float
+  longitude       Float
+  address         String
+  city            String
+  radius          Float        @default(5)
+  createdById     String
+  acceptedById    String?
+  scheduledFor    DateTime?
+  completedAt     DateTime?
+  cancelledAt     DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  createdBy       User         @relation("createdBy", fields: [createdById], references: [id], onDelete: Cascade)
+  acceptedBy      User?        @relation("acceptedBy", fields: [acceptedById], references: [id])
+  images          JobImage[]
+  reviews         Review[]
+  messages        Message[]    @relation("jobMessages")
+  proposals       Proposal[]
+  payments        Payment[]
+
+  @@index([createdById])
+  @@index([acceptedById])
+  @@index([status])
+  @@index([city])
+}
+
+enum JobStatus {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model JobImage {
+  id        String   @id @default(cuid())
+  jobId     String
+  url       String
+  createdAt DateTime @default(now())
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+}
+
+model Proposal {
+  id              String   @id @default(cuid())
+  jobId           String
+  workerId        String
+  message         String?
+  estimatedTime   Int?
+  proposedBudget  Float?
+  status          ProposalStatus @default(PENDING)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, workerId])
+  @@index([jobId])
+  @@index([workerId])
+}
+
+enum ProposalStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+model Review {
+  id              String   @id @default(cuid())
+  jobId           String
+  fromUserId      String
+  toUserId        String
+  rating          Int
+  comment         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  fromUser User @relation(fields: [fromUserId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([fromUserId])
+  @@index([toUserId])
+}
+
+model Message {
+  id              String   @id @default(cuid())
+  jobId           String?
+  fromUserId      String
+  toUserId        String
+  content         String
+  isRead          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  job Job? @relation("jobMessages", fields: [jobId], references: [id], onDelete: SetNull)
+  fromUser User @relation("sentBy", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser User @relation("sentTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([fromUserId])
+  @@index([toUserId])
+}
+
+model Notification {
+  id              String   @id @default(cuid())
+  userId          String
+  title           String
+  message         String
+  type            NotificationType
+  relatedId       String?
+  isRead          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+enum NotificationType {
+  JOB_POSTED
+  PROPOSAL_RECEIVED
+  JOB_ACCEPTED
+  JOB_COMPLETED
+  PAYMENT_RECEIVED
+  NEW_MESSAGE
+  REVIEW_RECEIVED
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  jobId           String
+  amount          Float
+  currency        String   @default("USD")
+  status          PaymentStatus @default(PENDING)
+  stripePaymentId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([status])
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
